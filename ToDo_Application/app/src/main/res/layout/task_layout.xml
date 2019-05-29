@@ -19,9 +19,11 @@
         android:paddingBottom="8dp">
 
         <TextView
-            android:id="@+id/taskDescription"
+            android:id="@+id/taskDescriptionTextView"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content" />
+            android:layout_height="wrap_content"
+            android:textColor="@android:color/primary_text_light"
+            style="@style/TextAppearance.AppCompat.Medium"/>
 
         <!-- An empty view for spacing out the description and priority views -->
         <View
@@ -32,8 +34,14 @@
         <TextView
             android:id="@+id/priorityTextView"
             android:layout_width="22dp"
-            android:layout_height="22dp" />
-        
+            android:layout_height="22dp"
+            android:layout_gravity="center"
+            android:gravity="center"
+            android:textAlignment="center"
+            style="@style/TextAppearance.AppCompat.Small"
+            android:textColor="@android:color/primary_text_light"
+            android:background="@drawable/priority"/>
+
     </LinearLayout>
 
     <!-- A grey divider line at the bottom of each task -->
