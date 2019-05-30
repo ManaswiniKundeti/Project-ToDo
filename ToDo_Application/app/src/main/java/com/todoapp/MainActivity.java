@@ -60,12 +60,12 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
                 int id = (int) viewHolder.itemView.getTag();
                 String stringId = Integer.toString(id);
 
-                Uri uri = TaskContract.TaskEntry.CONTENT_URI;
-                uri = uri.buildUpon().appendPath(stringId).build();
+                Uri builturi = TaskContract.TaskEntry.CONTENT_URI;
+                builturi = builturi.buildUpon().appendPath(stringId).build();
 
-                getContentResolver().delete(uri,null,null);
+                getContentResolver().delete(builturi,null,null);
                 //restart loader as the data is changed.
-                getSupportLoaderManager().restartLoader(TASK_LOADER_ID, null, MainActivity.this);
+                getSupportLoaderManager().restartLoader(TASK_LOADER_ID, null, MainActivity.this );
             }
         }).attachToRecyclerView(mRecyclerView);
 

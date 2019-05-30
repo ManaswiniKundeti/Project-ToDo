@@ -120,9 +120,17 @@ public class TaskContentProvider extends ContentProvider {
 
         final SQLiteDatabase db = mTaskDbHelper.getWritableDatabase();
         int match = sUriMatcher.match(uri);
+
+        String id = uri.getPathSegments().get(1); //get(0) is the tasks  and get(1) is the # id
+        //selection is _ID column = ?, selectionArgs = row ID from the URI
+        String mSelection = "_id=?";
+        String[] mSelectionArgs = new String[]{id};
+
         int itemsDeleted;
 
-        itemsDeleted =  db.delete(TaskContract.TaskEntry.TABLE_NAME,selection,selectionArgs);
+        itemsDeleted =  db.delete(TaskContract.TaskEntry.TABLE_NAME,
+                                    mSelection,
+                                    mSelectionArgs);
         getContext().getContentResolver().notifyChange(uri,null);
         return itemsDeleted;
     }
@@ -132,14 +140,48 @@ public class TaskContentProvider extends ContentProvider {
     public int update(@NonNull Uri uri, ContentValues values, String selection,
                       String[] selectionArgs) {
 
-        throw new UnsupportedOperationException("Not yet implemented");
+        final SQLiteDatabase db = mTaskDbHelper.getWritableDatabase();
+        int match = sUriMatcher.match(uri);
+        int tasksUpdated;
+
+        switch (match){
+            case TASK_WITH_ID:
+                //update single task by getting the id
+                String id = uri.getPathSegments().get(1);
+                //selection is _ID column = ?, selectionArgs = row ID from the URI
+                String mSelection = "_id=?";
+                String[] mSelectionArgs = new String[]{id};
+                tasksUpdated = db.update(TaskContract.TaskEntry.TABLE_NAME,
+                                        values,
+                                        mSelection,
+                                        mSelectionArgs);
+                break;
+             default:
+                 throw new UnsupportedOperationException("Unknown uri "+ uri);
+        }
+        if(tasksUpdated != 0){
+            //set notifications if a task was updated
+            getContext().getContentResolver().notifyChange(uri, null);
+        }
+        return tasksUpdated;
     }
 
 
     @Override
     public String getType(@NonNull Uri uri) {
+        int match = sUriMatcher.match(uri);
 
-        throw new UnsupportedOperationException("Not yet implemented");
+        switch (match){
+            case TASKS:
+                //directory
+                return "vnd.android.cursor.dir" + "/" + TaskContract.AUTHORITY + "/" + TaskContract.PATH_TASKS;
+            case TASK_WITH_ID:
+                // single item type
+                return "vnd.android.cursor.item" + "/" + TaskContract.AUTHORITY + "/" + TaskContract.PATH_TASKS;
+            default:
+                throw new UnsupportedOperationException("Unknown uri: " + uri);
+        }
+
     }
 
 }
