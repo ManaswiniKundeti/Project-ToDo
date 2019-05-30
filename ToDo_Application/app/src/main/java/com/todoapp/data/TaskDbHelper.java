@@ -4,17 +4,15 @@ import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 
+//This class creates our database that stores our to-do task data
 public class TaskDbHelper extends SQLiteOpenHelper {
 
-    // The name of the database
     private static final String DATABASE_NAME = "tasksDb.db";
 
     // If you change the database schema, you must increment the database version
     private static final int VERSION = 1;
 
-
-    // Constructor
-    TaskDbHelper(Context context) {
+    public TaskDbHelper(Context context) {
         super(context, DATABASE_NAME, null, VERSION);
     }
 

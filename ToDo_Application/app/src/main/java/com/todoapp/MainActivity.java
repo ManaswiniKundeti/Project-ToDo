@@ -2,6 +2,8 @@ package com.todoapp;
 
 import android.content.Intent;
 import android.database.Cursor;
+import android.database.SQLException;
+import android.net.Uri;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
@@ -13,7 +15,11 @@ import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.helper.ItemTouchHelper;
+import android.util.Log;
 import android.view.View;
+
+import com.todoapp.data.TaskContentProvider;
+import com.todoapp.data.TaskContract;
 
 public class MainActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor> {
 
@@ -51,7 +57,15 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
 
             @Override
             public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int i) {
+                int id = (int) viewHolder.itemView.getTag();
+                String stringId = Integer.toString(id);
 
+                Uri uri = TaskContract.TaskEntry.CONTENT_URI;
+                uri = uri.buildUpon().appendPath(stringId).build();
+
+                getContentResolver().delete(uri,null,null);
+                //restart loader as the data is changed.
+                getSupportLoaderManager().restartLoader(TASK_LOADER_ID, null, MainActivity.this);
             }
         }).attachToRecyclerView(mRecyclerView);
 
@@ -123,7 +137,20 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
             @Nullable
             @Override
             public Cursor loadInBackground() {
-                return null;
+                try{
+                    //null by default selects all the values in the directory/(table)
+                    //last column is the sort_order : Here, we are sorting by column_priority
+                    return getContentResolver().query(TaskContract.TaskEntry.CONTENT_URI,
+                            null,
+                            null,
+                            null,
+                            TaskContract.TaskEntry.COLUMN_PRIORITY);
+
+                }catch (Exception e){
+                    Log.e(TAG,"Failed to Asynchronously load data");
+                    e.printStackTrace();
+                    return null;
+                }
             }
 
             // deliverResult sends the result of the load, a Cursor, to the registered listener
@@ -158,3 +185,11 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         mAdapter.swapCursor(null);
     }
 }
+
+
+/**
+ * method call to select only the highest priority rows of data? (when priority = 1 is the highest priority level).
+ * In case when we wanted to filter the loadInBackground data based on a selected priority level
+ *
+ * getContentResolver().query(TaskContentProvider.CONTENT_URI, null, TaskContract.TaskEntry.COLUMN_PRIORITY + "=?", 1, null);
+ */

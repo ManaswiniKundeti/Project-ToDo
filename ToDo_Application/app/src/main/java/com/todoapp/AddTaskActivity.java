@@ -1,9 +1,15 @@
 package com.todoapp;
 
+import android.content.ContentValues;
+import android.net.Uri;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.EditText;
 import android.widget.RadioButton;
+import android.widget.Toast;
+
+import com.todoapp.data.TaskContract;
 
 public class AddTaskActivity extends AppCompatActivity {
     // Declare a member variable to keep track of a task's selected mPriority
@@ -25,7 +31,26 @@ public class AddTaskActivity extends AppCompatActivity {
      * It retrieves user input and inserts that new task data into the underlying database.
      */
     public void onClickAddTask(View view) {
-        // Not yet implemented
+
+        String input = ((EditText)findViewById(R.id.editTextTaskDecription)).getText().toString();
+        if(input.length() == 0){
+            return;
+        }
+
+        //to place task data , create content values object
+        ContentValues cv  = new ContentValues();
+        //put string into it using .put method
+        cv.put(TaskContract.TaskEntry.COLUMN_DESCRIPTION,input);
+        cv.put(TaskContract.TaskEntry.COLUMN_PRIORITY, mPriority);
+
+        //insert new task via contentResolver
+        Uri uri = getContentResolver().insert(TaskContract.TaskEntry.CONTENT_URI,cv);
+
+        //display the returnUri with toast
+        if(uri != null){
+            Toast.makeText(getBaseContext(), uri.toString(), Toast.LENGTH_LONG).show();
+        }
+        finish();
     }
 
 

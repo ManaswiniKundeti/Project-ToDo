@@ -9,7 +9,9 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".AddTaskActivity"></activity>
+        <activity android:name=".AddTaskActivity"
+            android:label="Add a New Task">
+        </activity>
         <activity android:name=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -17,6 +19,12 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <provider
+            android:authorities="com.todoapp"
+            android:name="com.todoapp.data.TaskContentProvider"
+            android:exported="false"/>
+
     </application>
 
 </manifest>
