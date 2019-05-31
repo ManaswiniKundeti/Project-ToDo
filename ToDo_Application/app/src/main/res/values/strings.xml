@@ -18,4 +18,5 @@
     <string name="low_priority">Low</string>
 
     <string name="add_button">Add</string>
+    <string name="update_button">Update</string>
 </resources>

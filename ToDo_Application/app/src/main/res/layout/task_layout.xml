@@ -1,53 +1,55 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- each task item in the list of to-do tasks displayed vertically-->
-<LinearLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="vertical"
+    android:orientation="horizontal"
+    android:paddingBottom="8dp"
+    android:paddingLeft="@dimen/activity_horizontal_margin"
+    android:paddingRight="@dimen/activity_horizontal_margin"
+    android:paddingTop="8dp"
     tools:context=".MainActivity">
 
-    <!-- layout of items in each to-do task displayed horizontally-->
     <LinearLayout
-        android:layout_width="match_parent"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:paddingTop="24dp"
-        android:paddingLeft="16dp"
-        android:paddingRight="16dp"
-        android:paddingBottom="8dp">
+        android:layout_weight="1"
+        android:orientation="vertical">
 
+        <!-- TextView that displays the description -->
         <TextView
-            android:id="@+id/taskDescriptionTextView"
-            android:layout_width="wrap_content"
+            android:id="@+id/taskDescription"
+            style="@style/TextAppearance.AppCompat.Medium"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:textColor="@android:color/primary_text_light"
-            style="@style/TextAppearance.AppCompat.Medium"/>
+            tools:text="Description" />
 
-        <!-- An empty view for spacing out the description and priority views -->
-        <View
-            android:layout_width="0dp"
-            android:layout_height="0dp"
-            android:layout_weight="1"/>
-
+        <!-- TextView that displays the update date -->
         <TextView
-            android:id="@+id/priorityTextView"
-            android:layout_width="22dp"
-            android:layout_height="22dp"
-            android:layout_gravity="center"
-            android:gravity="center"
-            android:textAlignment="center"
+            android:id="@+id/taskUpdatedAt"
             style="@style/TextAppearance.AppCompat.Small"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
             android:textColor="@android:color/primary_text_light"
-            android:background="@drawable/priority"/>
+            tools:text="11/11/1111" />
 
     </LinearLayout>
 
-    <!-- A grey divider line at the bottom of each task -->
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="1dp"
-        android:background="@android:color/darker_gray"/>
+    <!-- A priority circle that is colored in programmatically in the adapter code -->
+    <TextView
+        android:id="@+id/priorityTextView"
+        style="@style/TextAppearance.AppCompat.Small"
+        android:layout_width="22dp"
+        android:layout_height="22dp"
+        android:layout_gravity="center"
+        android:layout_marginLeft="8dp"
+        android:layout_marginStart="8dp"
+        android:background="@drawable/priority"
+        android:gravity="center"
+        android:textAlignment="center"
+        android:textColor="@android:color/primary_text_light"
+        tools:text="1" />
 
 </LinearLayout>

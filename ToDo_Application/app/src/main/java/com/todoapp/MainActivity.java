@@ -12,6 +12,7 @@ import android.support.v4.content.AsyncTaskLoader;
 import android.support.v4.content.Loader;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.widget.DividerItemDecoration;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.helper.ItemTouchHelper;
@@ -20,30 +21,42 @@ import android.view.View;
 
 import com.todoapp.data.TaskContentProvider;
 import com.todoapp.data.TaskContract;
+import com.todoapp.database.AppDatabase;
+import com.todoapp.database.TaskEntry;
 
-public class MainActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor> {
+import java.util.List;
+
+import static android.widget.LinearLayout.VERTICAL;
+
+public class MainActivity extends AppCompatActivity {
+        //implements LoaderManager.LoaderCallbacks<Cursor> {
 
     private static final String TAG = MainActivity.class.getSimpleName();
     private static final int TASK_LOADER_ID = 0;
 
-    RecyclerView mRecyclerView;
-    private TaskAdapter mAdapter;
+     RecyclerView mRecyclerView;
+     private TaskAdapter mAdapter;
+
+    private AppDatabase mDb;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        //set RecyclerView
-        mRecyclerView = (RecyclerView) findViewById(R.id.recyclerViewTasks);
+        // Set the RecyclerView to its corresponding view
+        mRecyclerView = findViewById(R.id.recyclerViewTasks);
+
         // Set the layout for the RecyclerView to be a linear layout, which measures and
         // positions items within a RecyclerView into a linear list
         mRecyclerView.setLayoutManager(new LinearLayoutManager(this));
 
-        //init adapter & add to to recycler view
-        mAdapter = new TaskAdapter(this);
+        // Initialize the adapter and attach it to the RecyclerView
+        mAdapter = new TaskAdapter(this, (TaskAdapter.ItemClickListener) this);
         mRecyclerView.setAdapter(mAdapter);
 
+        DividerItemDecoration decoration = new DividerItemDecoration(getApplicationContext(), VERTICAL);
+        mRecyclerView.addItemDecoration(decoration);
          /*
          Add a touch helper to the RecyclerView to recognize when a user swipes to delete an item.
          An ItemTouchHelper enables touch behavior (like swipe and move) on each ViewHolder,
@@ -63,9 +76,9 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
                 Uri builturi = TaskContract.TaskEntry.CONTENT_URI;
                 builturi = builturi.buildUpon().appendPath(stringId).build();
 
-                getContentResolver().delete(builturi,null,null);
+                getContentResolver().delete(builturi, null, null);
                 //restart loader as the data is changed.
-                getSupportLoaderManager().restartLoader(TASK_LOADER_ID, null, MainActivity.this );
+                //getSupportLoaderManager().restartLoader(TASK_LOADER_ID, null, MainActivity.this);
             }
         }).attachToRecyclerView(mRecyclerView);
 
@@ -86,11 +99,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         });
 
 
-        /*
-         Ensure a loader is initialized and active. If the loader doesn't already exist, one is
-         created, otherwise the last created loader is re-used.
-         */
-        getSupportLoaderManager().initLoader(TASK_LOADER_ID, null, this);
+        mDb = AppDatabase.getInstance(getApplicationContext());
     }
 
 
@@ -102,94 +111,19 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
     @Override
     protected void onResume() {
         super.onResume();
-        getSupportLoaderManager().restartLoader(TASK_LOADER_ID, null, this );
-    }
-
-
-    /**
-     * Instantiates and returns a new AsyncTaskLoader with the given ID.
-     * This loader will return task data as a Cursor or null if an error occurs.
-     *
-     * Implements the required callbacks to take care of loading data at all stages of loading.
-     */
-    @NonNull
-    @Override
-    public Loader<Cursor> onCreateLoader(int id, final @Nullable Bundle bundle) {
-
-        return new AsyncTaskLoader<Cursor>(this) {
-
-            // Initialize a Cursor, this will hold all the task data
-            Cursor mTaskData = null;
-
-            // onStartLoading() is called when a loader first starts loading data
+        // Use diskIO executer from the AppExecutors class to perform the DB operation on separate thread
+        AppExecutors.getInstance().diskIO().execute(new Runnable() {
             @Override
-            protected void onStartLoading() {
-                if(mTaskData != null) {
-                    // Delivers any previously loaded data immediately
-                    deliverResult(mTaskData);
-                } else {
-                    forceLoad();
-                }
+            public void run() {
+                final List<TaskEntry> tasks = mDb.taskDao().loadAllTasks();
+                //As 'mAdapter.setTasks(tasks)' is a UI operation, we cannot perform it on a DiskIO thread
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        mAdapter.setTasks(tasks);
+                    }
+                });
             }
-
-
-            // loadInBackground() performs asynchronous loading of data
-            @Nullable
-            @Override
-            public Cursor loadInBackground() {
-                try{
-                    //null by default selects all the values in the directory/(table)
-                    //last column is the sort_order : Here, we are sorting by column_priority
-                    return getContentResolver().query(TaskContract.TaskEntry.CONTENT_URI,
-                            null,
-                            null,
-                            null,
-                            TaskContract.TaskEntry.COLUMN_PRIORITY);
-
-                }catch (Exception e){
-                    Log.e(TAG,"Failed to Asynchronously load data");
-                    e.printStackTrace();
-                    return null;
-                }
-            }
-
-            // deliverResult sends the result of the load, a Cursor, to the registered listener
-            @Override
-            public void deliverResult(@Nullable Cursor data) {
-                mTaskData = data;
-                super.deliverResult(data);
-            }
-        };
-    }
-
-    /**
-     * Called when a previously created loader has finished its load.
-     *
-     * @param loader The Loader that has finished.
-     * @param data The data generated by the Loader.
-     */
-    @Override
-    public void onLoadFinished(@NonNull Loader<Cursor> loader, Cursor data) {
-        mAdapter.swapCursor(data);
-    }
-
-    /**
-     * Called when a previously created loader is being reset, and thus
-     * making its data unavailable.
-     * onLoaderReset removes any references this activity had to the loader's data.
-     *
-     * @param loader The Loader that is being reset.
-     */
-    @Override
-    public void onLoaderReset(@NonNull Loader<Cursor> loader) {
-        mAdapter.swapCursor(null);
+        });
     }
 }
-
-
-/**
- * method call to select only the highest priority rows of data? (when priority = 1 is the highest priority level).
- * In case when we wanted to filter the loadInBackground data based on a selected priority level
- *
- * getContentResolver().query(TaskContentProvider.CONTENT_URI, null, TaskContract.TaskEntry.COLUMN_PRIORITY + "=?", 1, null);
- */
