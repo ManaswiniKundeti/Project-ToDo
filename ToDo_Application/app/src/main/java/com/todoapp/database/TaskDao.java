@@ -1,6 +1,7 @@
 package com.todoapp.database;
 
 
+import android.arch.lifecycle.LiveData;
 import android.arch.persistence.room.Dao;
 import android.arch.persistence.room.Delete;
 import android.arch.persistence.room.Insert;
@@ -14,7 +15,8 @@ import java.util.List;
 public interface TaskDao {
 
     @Query("SELECT * FROM task ORDER BY priority")
-    List<TaskEntry> loadAllTasks();
+    LiveData<List<TaskEntry>> loadAllTasks();
+    //wrapping the return type in livedata notifies when there is a change in the data
 
     @Insert
     void insertTask(TaskEntry taskEntry);
@@ -27,7 +29,7 @@ public interface TaskDao {
 
     //as the below func is said to retrieve data from db, we add @query along with appropriate query
     @Query("SELECT * FROM task WHERE id = :id")
-    TaskEntry loadTaskById(int id);
+    LiveData<TaskEntry> loadTaskById(int id);
 }
 
 

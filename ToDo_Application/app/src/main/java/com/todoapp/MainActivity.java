@@ -1,5 +1,7 @@
 package com.todoapp;
 
+import android.arch.lifecycle.LiveData;
+import android.arch.lifecycle.Observer;
 import android.content.Intent;
 import android.database.Cursor;
 import android.database.SQLException;
@@ -76,20 +78,10 @@ public class MainActivity extends AppCompatActivity implements TaskAdapter.ItemC
                         int position = viewHolder.getAdapterPosition();
                         List<TaskEntry> tasks = mAdapter.getTasks();
                         mDb.taskDao().deleteTask(tasks.get(position));
-                        retrieveTasks();
+                        //retrieveTasks(); not needed as changes in db are triggered by live data
                     }
                 });
-
-//                int id = (int) viewHolder.itemView.getTag();
-//                String stringId = Integer.toString(id);
-//
-//                Uri builturi = TaskContract.TaskEntry.CONTENT_URI;
-//                builturi = builturi.buildUpon().appendPath(stringId).build();
-//
-//                getContentResolver().delete(builturi, null, null);
-//                //restart loader as the data is changed.
-                //getSupportLoaderManager().restartLoader(TASK_LOADER_ID, null, MainActivity.this);
-            }
+             }
         }).attachToRecyclerView(mRecyclerView);
 
 
@@ -110,6 +102,7 @@ public class MainActivity extends AppCompatActivity implements TaskAdapter.ItemC
 
 
         mDb = AppDatabase.getInstance(getApplicationContext());
+        retrieveTasks();
     }
 
 
@@ -122,24 +115,23 @@ public class MainActivity extends AppCompatActivity implements TaskAdapter.ItemC
     protected void onResume() {
         super.onResume();
         // Use diskIO executer from the AppExecutors class to perform the DB operation on separate thread
-       retrieveTasks();
+       //retrieveTasks(); moving to onCreate as any change in db would be triggered by Live data. Each time retrieve data need on be called onResume
     }
 
     public void retrieveTasks() {
-        AppExecutors.getInstance().diskIO().execute(new Runnable() {
+        Log.d(TAG, "Actively retrieving tasks from DB");
+        final LiveData<List<TaskEntry>> tasks = mDb.taskDao().loadAllTasks();
+        //observe is a lifecycle method-takes in(lifecycle owner(something that has lifecycle- here our activity), observer(create any observer))
+        tasks.observe(this, new Observer<List<TaskEntry>>() {
             @Override
-            public void run() {
-                final List<TaskEntry> tasks = mDb.taskDao().loadAllTasks();
-                //As 'mAdapter.setTasks(tasks)' is a UI operation, we cannot perform it on a DiskIO thread
-                //can be simplified further
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        mAdapter.setTasks(tasks);
-                    }
-                });
+            public void onChanged(@Nullable List<TaskEntry> taskEntries) {
+                Log.d(TAG, "Retrieving db update from Live data");
+                mAdapter.setTasks(taskEntries);
             }
         });
+        //Live data by default will run outside of main thread. We can abort using executor
+        //As 'mAdapter.setTasks(tasks)' is a UI operation, we cannot perform it on a DiskIO thread
+        //can be simplified further
     }
 
     @Override
