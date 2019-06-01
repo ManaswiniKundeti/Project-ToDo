@@ -25,6 +25,9 @@ public interface TaskDao {
     @Delete
     void deleteTask(TaskEntry taskEntry);
 
+    //as the below func is said to retrieve data from db, we add @query along with appropriate query
+    @Query("SELECT * FROM task WHERE id = :id")
+    TaskEntry loadTaskById(int id);
 }
 
 

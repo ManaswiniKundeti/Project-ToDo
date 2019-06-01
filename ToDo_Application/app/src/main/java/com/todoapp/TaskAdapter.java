@@ -117,6 +117,11 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.TaskViewHolder
         return mTaskEntries.size();
     }
 
+    //to access private list of tasks we created a public getTasks() method.
+    public List<TaskEntry> getTasks() {
+        return mTaskEntries;
+    }
+
     /**
      * When data changes, this method updates the list of taskEntries
      * and notifies the adapter to use the new values on it

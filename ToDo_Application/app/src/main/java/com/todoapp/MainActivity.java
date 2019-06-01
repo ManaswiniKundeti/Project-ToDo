@@ -28,13 +28,13 @@ import java.util.List;
 
 import static android.widget.LinearLayout.VERTICAL;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements TaskAdapter.ItemClickListener {
         //implements LoaderManager.LoaderCallbacks<Cursor> {
 
     private static final String TAG = MainActivity.class.getSimpleName();
     private static final int TASK_LOADER_ID = 0;
 
-     RecyclerView mRecyclerView;
+     private RecyclerView mRecyclerView;
      private TaskAdapter mAdapter;
 
     private AppDatabase mDb;
@@ -52,7 +52,7 @@ public class MainActivity extends AppCompatActivity {
         mRecyclerView.setLayoutManager(new LinearLayoutManager(this));
 
         // Initialize the adapter and attach it to the RecyclerView
-        mAdapter = new TaskAdapter(this, (TaskAdapter.ItemClickListener) this);
+        mAdapter = new TaskAdapter(this, this);
         mRecyclerView.setAdapter(mAdapter);
 
         DividerItemDecoration decoration = new DividerItemDecoration(getApplicationContext(), VERTICAL);
@@ -69,15 +69,25 @@ public class MainActivity extends AppCompatActivity {
             }
 
             @Override
-            public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int i) {
-                int id = (int) viewHolder.itemView.getTag();
-                String stringId = Integer.toString(id);
+            public void onSwiped(@NonNull final RecyclerView.ViewHolder viewHolder, int swipeDir) {
+                AppExecutors.getInstance().diskIO().execute(new Runnable() {
+                    @Override
+                    public void run() {
+                        int position = viewHolder.getAdapterPosition();
+                        List<TaskEntry> tasks = mAdapter.getTasks();
+                        mDb.taskDao().deleteTask(tasks.get(position));
+                        retrieveTasks();
+                    }
+                });
 
-                Uri builturi = TaskContract.TaskEntry.CONTENT_URI;
-                builturi = builturi.buildUpon().appendPath(stringId).build();
-
-                getContentResolver().delete(builturi, null, null);
-                //restart loader as the data is changed.
+//                int id = (int) viewHolder.itemView.getTag();
+//                String stringId = Integer.toString(id);
+//
+//                Uri builturi = TaskContract.TaskEntry.CONTENT_URI;
+//                builturi = builturi.buildUpon().appendPath(stringId).build();
+//
+//                getContentResolver().delete(builturi, null, null);
+//                //restart loader as the data is changed.
                 //getSupportLoaderManager().restartLoader(TASK_LOADER_ID, null, MainActivity.this);
             }
         }).attachToRecyclerView(mRecyclerView);
@@ -112,11 +122,16 @@ public class MainActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         // Use diskIO executer from the AppExecutors class to perform the DB operation on separate thread
+       retrieveTasks();
+    }
+
+    public void retrieveTasks() {
         AppExecutors.getInstance().diskIO().execute(new Runnable() {
             @Override
             public void run() {
                 final List<TaskEntry> tasks = mDb.taskDao().loadAllTasks();
                 //As 'mAdapter.setTasks(tasks)' is a UI operation, we cannot perform it on a DiskIO thread
+                //can be simplified further
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
@@ -125,5 +140,13 @@ public class MainActivity extends AppCompatActivity {
                 });
             }
         });
+    }
+
+    @Override
+    public void onItemClickListener(int itemId) {
+        // // Launch AddTaskActivity adding the itemId as an extra in the intent
+        Intent intent = new Intent(MainActivity.this, AddTaskActivity.class);
+        intent.putExtra(AddTaskActivity.EXTRA_TASK_ID, itemId);
+        startActivity(intent);
     }
 }
