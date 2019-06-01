@@ -1,17 +1,11 @@
 package com.todoapp;
 
-import android.arch.lifecycle.LiveData;
 import android.arch.lifecycle.Observer;
+import android.arch.lifecycle.ViewModelProviders;
 import android.content.Intent;
-import android.database.Cursor;
-import android.database.SQLException;
-import android.net.Uri;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
-import android.support.v4.app.LoaderManager;
-import android.support.v4.content.AsyncTaskLoader;
-import android.support.v4.content.Loader;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.DividerItemDecoration;
@@ -21,8 +15,6 @@ import android.support.v7.widget.helper.ItemTouchHelper;
 import android.util.Log;
 import android.view.View;
 
-import com.todoapp.data.TaskContentProvider;
-import com.todoapp.data.TaskContract;
 import com.todoapp.database.AppDatabase;
 import com.todoapp.database.TaskEntry;
 
@@ -78,7 +70,7 @@ public class MainActivity extends AppCompatActivity implements TaskAdapter.ItemC
                         int position = viewHolder.getAdapterPosition();
                         List<TaskEntry> tasks = mAdapter.getTasks();
                         mDb.taskDao().deleteTask(tasks.get(position));
-                        //retrieveTasks(); not needed as changes in db are triggered by live data
+                        //setupViewModel(); not needed as changes in db are triggered by live data
                     }
                 });
              }
@@ -102,30 +94,18 @@ public class MainActivity extends AppCompatActivity implements TaskAdapter.ItemC
 
 
         mDb = AppDatabase.getInstance(getApplicationContext());
-        retrieveTasks();
+        setupViewModel();
     }
 
-
-    /**
-     * This method is called after this activity has been paused or restarted.
-     * Often, this is after new data has been inserted through an AddTaskActivity,
-     * so this restarts the loader to re-query the underlying data for any changes.
-     */
-    @Override
-    protected void onResume() {
-        super.onResume();
-        // Use diskIO executer from the AppExecutors class to perform the DB operation on separate thread
-       //retrieveTasks(); moving to onCreate as any change in db would be triggered by Live data. Each time retrieve data need on be called onResume
-    }
-
-    public void retrieveTasks() {
-        Log.d(TAG, "Actively retrieving tasks from DB");
-        final LiveData<List<TaskEntry>> tasks = mDb.taskDao().loadAllTasks();
+    public void setupViewModel() {
+        //Log.d(TAG, "Actively retrieving tasks from DB");
+        //final LiveData<List<TaskEntry>> tasks = mDb.taskDao().loadAllTasks();
+        MainViewModel viewModel = ViewModelProviders.of(this).get(MainViewModel.class);
         //observe is a lifecycle method-takes in(lifecycle owner(something that has lifecycle- here our activity), observer(create any observer))
-        tasks.observe(this, new Observer<List<TaskEntry>>() {
+        viewModel.getTasks().observe(this, new Observer<List<TaskEntry>>() {
             @Override
             public void onChanged(@Nullable List<TaskEntry> taskEntries) {
-                Log.d(TAG, "Retrieving db update from Live data");
+                Log.d(TAG, "Updating list of tasks from livedata in view model");
                 mAdapter.setTasks(taskEntries);
             }
         });
